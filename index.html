@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 404 Dev</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#070A12',
+                            card: '#0D1424',
+                            border: '#1E293B',
+                            primary: '#3B82F6',
+                            neon: '#00D2FF',
+                            glow: '#2563EB',
+                            darkText: '#94A3B8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #070A12;
+            color: #F8FAFC;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070A12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3B82F6;
+        }
+
+        .glass-panel {
+            background: rgba(13, 20, 36, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 210, 255, 0.15);
+        }
+
+        @keyframes cookieHover {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.03) rotate(2deg); }
+        }
+
+        .cookie-hero {
+            animation: cookieHover 6s ease-in-out infinite;
+            transition: transform 0.1s ease, filter 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .cookie-hero:active {
+            transform: scale(0.92) !important;
+            filter: brightness(1.25) drop-shadow(0 0 25px rgba(0,210,255,0.8));
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-85px) scale(1.4);
+            }
+        }
+
+        .click-float {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            animation: floatUp 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            z-index: 50;
+            text-shadow: 0 0 12px rgba(0, 210, 255, 0.8);
+        }
+
+        .text-glow-cyber {
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.6), 0 0 40px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative selection:bg-cyan-500 selection:text-black">
+
+    <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-40"></canvas>
+
+    <header class="sticky top-0 z-30 glass-panel border-b border-cyan-500/20 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl overflow-hidden border border-cyan-400/40 shadow-lg shadow-cyan-500/20 bg-cyber-card flex items-center justify-center relative group">
+                    <img src="https://raw.githubusercontent.com/lab404-dev/.github/main/avatar.png" alt="Lab 404 Dev Avatar" 
+                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                         onerror="this.onerror=null; this.src='avatar.png';">
+                </div>
+                <div>
+                    <h1 class="font-mono font-bold text-lg tracking-tight text-white flex items-center gap-2">
+                        lab404-dev
+                        <span class="text-xs font-sans font-normal bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full">v1.0.0</span>
+                    </h1>
+                    <p class="text-xs text-cyber-darkText font-mono">Linux • C++ • Frontend • Cookies</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyan-500/20 text-xs font-mono">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00d2ff]"></span>
+                    <span class="text-gray-400">Status:</span>
+                    <span class="text-cyan-300 font-semibold" id="cookieStatusText">In Stock 🍪</span>
+                </div>
+                <a href="https://github.com/lab404-dev" target="_blank" rel="noopener noreferrer" 
+                   class="px-3.5 py-1.5 rounded-lg bg-cyber-card hover:bg-slate-800 border border-cyan-500/30 text-xs font-mono font-semibold text-cyan-300 hover:text-white transition-all duration-200 flex items-center gap-2 shadow-md shadow-cyan-500/5 hover:shadow-cyan-500/20">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-between gap-10">
+
+        <div class="text-center space-y-3 max-w-2xl">
+            <h2 class="text-4xl sm:text-6xl font-black text-white tracking-tight">
+                <span class="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent">Lab 404 Dev</span>
+            </h2>
+            <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+                Created purely for the sake of <strong class="text-cyan-300">having it</strong>. Working at the system level, coding in C++ and web technologies, and most importantly - keeping the cookie balance at maximum.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div class="glass-panel rounded-2xl p-6 border border-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-2xl">📌</span>
+                    <h3 class="font-mono font-bold text-lg text-white">Our Manifesto</h3>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-300 font-sans">
+                    <li class="flex items-start gap-2">
+                        <span class="text-cyan-400 font-bold">•</span>
+                        <span><strong>Activity:</strong> It will definitely happen someday. Main thing is not to rush.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-cyan-400 font-bold">•</span>
+                        <span><strong>Top Priority:</strong> Always having fresh cookies at home.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-cyan-400 font-bold">•</span>
+                        <span><strong>Stack:</strong> Linux, C++, Frontend, Bash & Cyber Cookie Power.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-6 border border-cyan-500/20 hover:border-cyan-400/50 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-2xl">🐛</span>
+                    <h3 class="font-mono font-bold text-lg text-white">Bug Policy</h3>
+                </div>
+                <ol class="space-y-2 text-sm text-gray-300 font-sans list-decimal list-inside">
+                    <li>If you found a bug - know that <strong class="text-cyan-300">it was planned that way</strong>.</li>
+                    <li>If it was DEFINITELY not planned - developers ran out of cookies.</li>
+                    <li>Bug reports are accepted, but issues are closed <em class="text-cyan-400 underline">only when cookies are available</em>.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="w-full glass-panel rounded-2xl p-6 border border-cyan-500/20">
+            <h3 class="font-mono font-bold text-xs text-cyan-400/80 uppercase tracking-wider mb-4 text-center">Core Developers</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a href="https://github.com/y-lebid" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 rounded-xl bg-cyber-card/80 hover:bg-slate-800/90 border border-cyan-500/20 hover:border-cyan-400/50 transition-all group">
+                    <img src="https://github.com/y-lebid.png" alt="y-lebid avatar" 
+                         class="w-10 h-10 rounded-full object-cover border border-cyan-400/40 shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform"
+                         onerror="this.onerror=null; this.src='https://placehold.co/80x80/0D1424/00D2FF?text=YL';">
+                    <div>
+                        <div class="font-semibold text-sm text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+                            y-lebid
+                            <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </div>
+                        <div class="text-xs text-gray-400">AppSec & System Mon Lord</div>
+                    </div>
+                </a>
+
+                <a href="https://github.com/nick-yaruta" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 rounded-xl bg-cyber-card/80 hover:bg-slate-800/90 border border-cyan-500/20 hover:border-cyan-400/50 transition-all group">
+                    <img src="https://github.com/nick-yaruta.png" alt="nick-yaruta avatar" 
+                         class="w-10 h-10 rounded-full object-cover border border-cyan-400/40 shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform"
+                         onerror="this.onerror=null; this.src='https://placehold.co/80x80/0D1424/00D2FF?text=NY';">
+                    <div>
+                        <div class="font-semibold text-sm text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+                            nick-yaruta
+                            <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </div>
+                        <div class="text-xs text-gray-400">Web Magician & Pixel Master</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div id="cookieClickArea" class="w-full flex flex-col items-center justify-center my-2 relative py-6">
+            
+            <div class="text-center space-y-1 mb-6">
+                <div class="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold">Lab Cookie Counter</div>
+                <div class="text-5xl sm:text-7xl font-black font-mono text-white text-glow-cyber tracking-tight flex items-center justify-center gap-3">
+                    <span id="clickCounter">0</span>
+                    <span class="text-3xl sm:text-5xl">🍪</span>
+                </div>
+                <div class="text-xs font-mono text-gray-400 flex items-center justify-center gap-2 pt-2">
+                    <span>Rank: <strong id="userRankText" class="text-cyan-400">Crumb Inspector</strong></span>
+                    <span>•</span>
+                    <span>Milestone Status: <strong id="milestoneBadge" class="text-gray-300">Start clicking!</strong></span>
+                </div>
+            </div>
+
+            <div class="relative flex items-center justify-center">
+                <div class="absolute w-64 h-64 sm:w-80 sm:h-80 bg-cyan-500/25 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div id="bigCookie" class="cookie-hero relative z-10 w-56 h-56 sm:w-72 sm:h-72 filter drop-shadow-[0_0_25px_rgba(0,210,255,0.4)]">
+                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                        <path d="M100 10C150 10 190 45 188 98C186 150 148 190 98 190C45 190 10 152 10 98C10 48 48 10 100 10Z" fill="#D97706"/>
+                        <path d="M95 15C140 15 180 48 178 95C176 142 140 180 95 180C48 180 18 145 18 95C18 48 50 15 95 15Z" fill="#B45309"/>
+                        <circle cx="100" cy="100" r="78" fill="#D97706" fill-opacity="0.9"/>
+                        
+                        <path d="M60 50C65 48 75 52 73 62C71 70 60 72 54 66C50 60 54 52 60 50Z" fill="#2E1506"/>
+                        <circle cx="62" cy="56" r="1.5" fill="#00D2FF"/>
+                        
+                        <path d="M130 65C138 62 146 70 142 78C138 85 125 84 122 75C120 68 124 67 130 65Z" fill="#2E1506"/>
+                        
+                        <path d="M85 105C92 100 105 108 100 118C95 126 82 122 80 113C78 106 80 108 85 105Z" fill="#381A08"/>
+                        <circle cx="95" cy="112" r="1.5" fill="#00D2FF"/>
+                        
+                        <path d="M140 120C148 118 152 128 147 135C142 142 130 138 132 128C133 122 135 121 140 120Z" fill="#2E1506"/>
+                        
+                        <path d="M50 125C58 122 62 135 55 142C48 148 40 138 43 130C45 125 46 127 50 125Z" fill="#381A08"/>
+                        
+                        <path d="M100 40C106 38 112 45 108 50C104 55 94 52 96 45C97 41 98 41 100 40Z" fill="#2E1506"/>
+                        
+                        <path d="M150 95C155 92 160 98 158 103C155 108 147 106 148 100C148 96 147 96 150 95Z" fill="#381A08"/>
+
+                        <circle cx="40" cy="85" r="3" fill="#92400E"/>
+                        <circle cx="115" cy="155" r="4" fill="#92400E"/>
+                        <circle cx="165" cy="80" r="2.5" fill="#78350F"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="mt-5 text-xs font-mono text-cyan-400/70 animate-pulse text-center">
+                [ Click the cookie to fix bugs & unlock rank milestones ]
+            </div>
+        </div>
+
+        <div class="w-full glass-panel rounded-2xl p-6 border border-cyan-500/20 space-y-4">
+            <div class="flex items-center justify-between border-b border-cyan-500/20 pb-3">
+                <h3 class="font-mono font-bold text-sm text-gray-200 flex items-center gap-2">
+                    <span>🏆</span> Cookie Milestones
+                </h3>
+                <span class="text-xs font-mono text-cyan-400" id="milestonesProgress">0 / 6 Unlocked</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono" id="milestoneList">
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="glass-panel border-t border-cyan-500/20 py-6 px-4 mt-12">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400 font-mono">
+            <div>
+                © 2026 <strong class="text-cyan-300">Lab 404 Dev</strong>. All bugs are feature-complete.
+            </div>
+            <div class="flex items-center gap-4">
+                <span>Baked with 🍪 & Linux</span>
+                <span>•</span>
+                <button id="resetCookieBtn" class="hover:text-cyan-400 transition-colors underline">Reset Counter</button>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let clickCount = 0;
+        const clickCounterEl = document.getElementById('clickCounter');
+        const bigCookie = document.getElementById('bigCookie');
+        const cookieClickArea = document.getElementById('cookieClickArea');
+        const userRankText = document.getElementById('userRankText');
+        const milestoneBadge = document.getElementById('milestoneBadge');
+        const milestoneList = document.getElementById('milestoneList');
+        const milestonesProgress = document.getElementById('milestonesProgress');
+        const cookieStatusText = document.getElementById('cookieStatusText');
+
+        const MILESTONES = [
+            { count: 1, title: "#1 First Crumb", rank: "Junior Crumb Inspector" },
+            { count: 50, title: "#50 Cookie Dough", rank: "Dough Developer" },
+            { count: 100, title: "#100 Centurion Baker", rank: "C++ Cookie Architect" },
+            { count: 500, title: "#500 Linux Kernel Baker", rank: "Kernel Cookie Lord" },
+            { count: 1000, title: "#1000 Master 404", rank: "God of 404 Laboratory" },
+            { count: 5000, title: "#5000 Infinite Biscuit", rank: "Eternal Cookie Entity" }
+        ];
+
+        let audioCtx = null;
+
+        function playClickSound(isMilestone = false) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (isMilestone) {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                } else {
+                    osc.type = 'sine';
+                    const pitch = 300 + Math.random() * 200 + (clickCount % 50);
+                    osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.07);
+
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.07);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.07);
+                }
+            } catch(e) {}
+        }
+
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, isGold = false) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 6 + 2;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.8) * 12;
+                this.gravity = 0.38;
+                this.color = isGold 
+                    ? ['#00D2FF', '#3B82F6', '#60A5FA', '#FFFFFF'][Math.floor(Math.random() * 4)]
+                    : ['#00D2FF', '#2563EB', '#D97706', '#B45309'][Math.floor(Math.random() * 4)];
+                this.alpha = 1;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.vRot = (Math.random() - 0.5) * 0.2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.alpha -= 0.022;
+                this.rotation += this.vRot;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function createParticles(x, y, count = 15, isGold = false) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, isGold));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function spawnFloatingText(x, y, text, isSpecial = false) {
+            const el = document.createElement('div');
+            el.className = 'click-float';
+            el.innerText = text;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.color = isSpecial ? '#00D2FF' : '#F8FAFC';
+            if (isSpecial) {
+                el.style.fontSize = '1.5rem';
+            } else {
+                el.style.fontSize = '1.1rem';
+            }
+
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('lab404_cookie_clicks');
+            if (saved !== null) {
+                clickCount = parseInt(saved, 10) || 0;
+            }
+            updateUI();
+        }
+
+        function saveState() {
+            localStorage.setItem('lab404_cookie_clicks', clickCount.toString());
+        }
+
+        function updateUI() {
+            clickCounterEl.innerText = clickCount.toLocaleString();
+
+            let currentRank = "Crumb Inspector";
+            let unlockedCount = 0;
+
+            MILESTONES.forEach(m => {
+                if (clickCount >= m.count) {
+                    currentRank = m.rank;
+                    unlockedCount++;
+                }
+            });
+
+            userRankText.innerText = currentRank;
+            milestonesProgress.innerText = `${unlockedCount} / ${MILESTONES.length} Unlocked`;
+
+            const nextMilestone = MILESTONES.find(m => clickCount < m.count);
+            if (nextMilestone) {
+                milestoneBadge.innerText = `Next: ${nextMilestone.count} 🍪`;
+            } else {
+                milestoneBadge.innerText = `All Milestones Mastered! 👑`;
+            }
+
+            if (clickCount > 1000) {
+                cookieStatusText.innerText = "Overclocked ⚡";
+            } else if (clickCount > 100) {
+                cookieStatusText.innerText = "Freshly Baked 🥖";
+            } else {
+                cookieStatusText.innerText = "In Stock 🍪";
+            }
+
+            renderMilestones();
+        }
+
+        function renderMilestones() {
+            milestoneList.innerHTML = '';
+            MILESTONES.forEach(m => {
+                const isUnlocked = clickCount >= m.count;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                    isUnlocked 
+                        ? 'bg-cyan-500/10 border-cyan-400/50 text-cyan-300 shadow-md shadow-cyan-500/10' 
+                        : 'bg-cyber-card/40 border-slate-800 text-gray-600'
+                }`;
+
+                card.innerHTML = `
+                    <div class="font-bold flex items-center justify-between">
+                        <span>${m.title}</span>
+                        <span>${isUnlocked ? '✅' : '🔒'}</span>
+                    </div>
+                    <div class="text-[10px] mt-1 text-gray-400 font-sans">${m.rank}</div>
+                `;
+                milestoneList.appendChild(card);
+            });
+        }
+
+        bigCookie.addEventListener('click', (e) => {
+            clickCount++;
+            saveState();
+
+            const rect = bigCookie.getBoundingClientRect();
+            const clickX = e.clientX || (rect.left + rect.width / 2);
+            const clickY = e.clientY || (rect.top + rect.height / 2);
+
+            const milestoneReached = MILESTONES.find(m => m.count === clickCount);
+
+            if (milestoneReached) {
+                playClickSound(true);
+                createParticles(clickX, clickY, 40, true);
+                spawnFloatingText(clickX - 40, clickY - 20, `🎉 ${milestoneReached.title}!`, true);
+            } else {
+                playClickSound(false);
+                createParticles(clickX, clickY, 12, false);
+                spawnFloatingText(clickX - 10, clickY - 10, `+1`, false);
+            }
+
+            updateUI();
+        });
+
+        bigCookie.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            bigCookie.click();
+        }, { passive: false });
+
+        document.getElementById('resetCookieBtn').addEventListener('click', () => {
+            clickCount = 0;
+            saveState();
+            updateUI();
+        });
+
+        loadState();
+    </script>
+</body>
+</html>
